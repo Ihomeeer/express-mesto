@@ -1,21 +1,17 @@
 const router = require("express").Router();
-const User = require("../models/user");
+const {
+  getAllUsers,
+  getUserById,
+  createUser,
+} = require("../controllers/users");
 
-router.get("/users", (req, res) => {
-  User.find({})
-    .then((users) => res.status(200).send({ data: users }))
-    .catch((err) => res.status(500).send({ message: `Произошла ошибка: ${err}` }));
-});
+// Получить всех пользователей
+router.get("/users", getAllUsers);
 
-router.get("/users:userId", (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => res.status(500).send({ message: `Произошла ошибка: ${err}` }));
-});
+// Получить определенного пользователя по id
+router.get("/users:userId", getUserById);
 
-router.post("/users", (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => res.status(500).send({ message: `Произошла ошибка: ${err}` }));
-});
+// Создать нового пользователя
+router.post("/users", createUser);
+
+module.exports = router;
