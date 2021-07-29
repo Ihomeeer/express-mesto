@@ -31,8 +31,9 @@ const createUser = (req, res) => {
 
 // Получить конкретного пользователя
 const getUserById = (req, res) => {
-  User.findById(req.params.id)
+  User.findById(req.params.userId)
     .orFail(() => {
+      console.log("Код попал в onFail");
       const error = new Error("Пользователь с заданным id отсутствует в базе");
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
@@ -60,14 +61,14 @@ const updateUserProfile = (req, res) => {
     {
       new: true, // обработчик then получит на вход обновлённую запись
       runValidators: true, // данные будут валидированы перед изменением
-      upsert: true, // если пользователь не найден, он будет создан
+      upsert: false, // если пользователь не найден, он НЕ будет создан
     })
-    .then((user) => res.status(200).send({ data: user }))
     .orFail(() => {
       const error = new Error("Пользователь с заданным id отсутствует в базе");
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
+    .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.statusCode === errorCodes.NOT_FOUND) {
         res.status(errorCodes.NOT_FOUND).send({ message: err.message });
@@ -89,14 +90,14 @@ const updateUserAvatar = (req, res) => {
     {
       new: true, // обработчик then получит на вход обновлённую запись
       runValidators: true, // данные будут валидированы перед изменением
-      upsert: true, // если пользователь не найден, он будет создан
+      upsert: false, // если пользователь не найден, он НЕ будет создан
     })
-    .then((user) => res.status(200).send({ data: user }))
     .orFail(() => {
       const error = new Error("Пользователь с заданным id отсутствует в базе");
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
+    .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.statusCode === errorCodes.NOT_FOUND) {
         res.status(errorCodes.NOT_FOUND).send({ message: err.message });

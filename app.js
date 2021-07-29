@@ -4,6 +4,11 @@ const mongoose = require("mongoose");
 // подключение express
 const app = express();
 
+// подключение helmet для защиты рабочей среды
+const helmet = require("helmet");
+
+app.use(helmet());
+
 const userRoute = require("./routes/users");
 const cardRoute = require("./routes/cards");
 

@@ -36,6 +36,7 @@ const deleteCard = (req, res) => {
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
+    .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
@@ -59,6 +60,7 @@ const addCardLike = (req, res) => {
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
+    .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
@@ -82,6 +84,7 @@ const deleteCardLike = (req, res) => {
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
+    .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
