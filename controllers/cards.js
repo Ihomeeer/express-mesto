@@ -1,111 +1,109 @@
 const Card = require("../models/card");
+const NotFoundError = require("../errors/NotFound");
+const BadRequestError = require("../errors/BadRequest");
+const ForbiddenError = require("../errors/Forbidden");
 
 const errorCodes = {
   NOT_FOUND: 404,
   BAD_REQUEST: 400,
-  DEFAULT: 500,
   FORBIDDEN: 403,
 };
 
 // Получить все карточки
-const getAllCards = (req, res) => {
+const getAllCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.status(200).send({ data: cards }))
-    .catch(() => {
-      res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+    .catch((err) => {
+      next(err);
     });
 };
 
 // Создать карточку
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Переданы некорректные данные при создании карточки" });
+        next(new BadRequestError("Переданы некорректные данные при создании карточки"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Удалить карточку
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .orFail(() => {
-      const error = new Error("Карточка с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Карточка с заданным id отсутствует в базе");
     })
     .then((card) => {
       if (req.user._id !== card.owner.toString()) {
         // Удалять нельзя
-        res.status(errorCodes.FORBIDDEN).send({ message: "Невозможно удалить чужую карточку" });
+        throw new ForbiddenError("Невозможно удалить чужую карточку");
       } else {
         Card.findByIdAndRemove(req.params.cardId)
-          .then((currentCard) => res.status(200).send({ data: currentCard }));
+          .then((currentCard) => res.status(200).send({ data: currentCard }))
+          .catch((err) => {
+            next(err);
+          });
       }
     })
     .catch((err) => {
       if (err.statuscode === errorCodes.FORBIDDEN) {
-        res.status(errorCodes.FORBIDDEN).send({ message: err.message });
+        next(err);
       } else if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: "Карточка с заданным id отсутствует в базе" });
+        next(err);
       } else if (err.statusCode === errorCodes.BAD_REQUEST) {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id карточки" });
+        next(new BadRequestError("Ошибка в формате id карточки"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Поставить лайк карточке
-const addCardLike = (req, res) => {
+const addCardLike = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
     .orFail(() => {
-      const error = new Error("Карточка с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Карточка с заданным id отсутствует в базе");
     })
     .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id карточки" });
+        next(new BadRequestError("Ошибка в формате id карточки"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Убрать лайк у карточки
-const deleteCardLike = (req, res) => {
+const deleteCardLike = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
     .orFail(() => {
-      const error = new Error("Карточка с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Карточка с заданным id отсутствует в базе");
     })
     .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
-      console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id карточки" });
+        next(new BadRequestError("Ошибка в формате id карточки"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };

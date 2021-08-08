@@ -20,7 +20,7 @@ const getAllUsers = (req, res, next) => {
 };
 
 // Создать нового пользователя
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
@@ -32,63 +32,62 @@ const createUser = (req, res) => {
         .then((user) => res.send({ data: user }))
         .catch((err) => {
           if (err.name === "ValidationError") {
-            res.status(errorCodes.BAD_REQUEST).send({ message: "Переданы некорректные данные при создании пользователя" });
+            next(new BadRequestError("Переданы некорректные данные при создании пользователя"));
+          } else if (err.name === "MongoError" && err.code === 11000) {
+            next(new ConflictingRequestError("Пользователь с такими данными уже существует"));
           } else {
-            res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+            next(err);
           }
         });
+    })
+    .catch((err) => {
+      next(err);
     });
 };
 
 // Получить конкретного пользователя
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .orFail(() => {
-      const error = new Error("Пользователь с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Пользователь с заданным id отсутствует в базе");
     })
     .then((user) => {
       res.status(200).send({ data: user });
     })
     .catch((err) => {
-      console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id пользователя" });
+        next(new BadRequestError("Ошибка в формате id пользователя"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Получить инфо об авторизированном пользователе
-const getUserInfo = (req, res) => {
+const getUserInfo = (req, res, next) => {
   const currentUser = req.user._id;
   User.findById(currentUser)
     .orFail(() => {
-      const error = new Error("Пользователь с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Пользователь с заданным id отсутствует в базе");
     })
     .then((user) => {
       res.status(200).send({ data: user });
     })
     .catch((err) => {
-      console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id пользователя" });
+        next(new BadRequestError("Ошибка в формате id пользователя"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Обновить профиль пользователя
-const updateUserProfile = (req, res) => {
+const updateUserProfile = (req, res, next) => {
   const { name, about } = req.body;
   const currentUser = req.user._id;
   User.findByIdAndUpdate(currentUser, { name, about },
@@ -98,26 +97,24 @@ const updateUserProfile = (req, res) => {
       upsert: false, // если пользователь не найден, он НЕ будет создан
     })
     .orFail(() => {
-      const error = new Error("Пользователь с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Пользователь с заданным id отсутствует в базе");
     })
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "ValidationError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Переданы некорректные данные при обновлении профиля пользователя" });
+        next(new BadRequestError("Переданы некорректные данные при обновлении профиля пользователя"));
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id пользователя" });
+        next(new BadRequestError("Ошибка в формате id пользователя"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
 
 // Обновить аватар пользователя
-const updateUserAvatar = (req, res) => {
+const updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const currentUser = req.user._id;
   User.findByIdAndUpdate(currentUser, { avatar },
@@ -127,20 +124,18 @@ const updateUserAvatar = (req, res) => {
       upsert: false, // если пользователь не найден, он НЕ будет создан
     })
     .orFail(() => {
-      const error = new Error("Пользователь с заданным id отсутствует в базе");
-      error.statusCode = errorCodes.NOT_FOUND;
-      throw error;
+      throw new NotFoundError("Пользователь с заданным id отсутствует в базе");
     })
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
+        next(err);
       } else if (err.name === "ValidationError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Переданы некорректные данные при обновлении аватара пользователя" });
+        next(new BadRequestError("Переданы некорректные данные при обновлении аватара пользователя"));
       } else if (err.name === "CastError") {
-        res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id пользователя" });
+        next(new BadRequestError("Ошибка в формате id пользователя"));
       } else {
-        res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
+        next(err);
       }
     });
 };
