@@ -11,6 +11,10 @@ app.use(helmet());
 
 const userRoute = require("./routes/users");
 const cardRoute = require("./routes/cards");
+const login = require("./controllers/login");
+const { createUser } = require("./controllers/users");
+const authCheck = require("./middlewares/auth");
+const errorHandler = require("./middlewares/errorHandler");
 
 const { PORT = 3000 } = process.env;
 
@@ -25,16 +29,13 @@ mongoose.connect("mongodb://localhost:27017/mestodb", {
 // подключение парсера
 app.use(express.json());
 
-//  Временное решение для авторизации, пофиксится в следующем спринте
-app.use((req, res, next) => {
-  req.user = {
-    _id: "6101930e161e28309024c751",
-  };
-
-  next();
-});
-
 // подключение роутов для юзеровв и карточек, а так же роута для страницы 404
+app.post("/signin", login);
+
+app.post("/signup", createUser);
+
+app.use(authCheck);
+
 app.use("/", userRoute);
 
 app.use("/", cardRoute);
@@ -42,6 +43,8 @@ app.use("/", cardRoute);
 app.use("*", (req, res) => {
   res.status(404).send({ message: "Ошибка 404, такой страницы не существует" });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);

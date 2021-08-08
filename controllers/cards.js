@@ -4,6 +4,7 @@ const errorCodes = {
   NOT_FOUND: 404,
   BAD_REQUEST: 400,
   DEFAULT: 500,
+  FORBIDDEN: 403,
 };
 
 // Получить все карточки
@@ -15,6 +16,7 @@ const getAllCards = (req, res) => {
     });
 };
 
+// Создать карточку
 const createCard = (req, res) => {
   const { name, link } = req.body;
   const owner = req.user._id;
@@ -29,19 +31,29 @@ const createCard = (req, res) => {
     });
 };
 
+// Удалить карточку
 const deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .orFail(() => {
       const error = new Error("Карточка с заданным id отсутствует в базе");
       error.statusCode = errorCodes.NOT_FOUND;
       throw error;
     })
-    .then((card) => res.status(200).send({ data: card }))
+    .then((card) => {
+      if (req.user._id !== card.owner.toString()) {
+        // Удалять нельзя
+        res.status(errorCodes.FORBIDDEN).send({ message: "Невозможно удалить чужую карточку" });
+      } else {
+        Card.findByIdAndRemove(req.params.cardId)
+          .then((currentCard) => res.status(200).send({ data: currentCard }));
+      }
+    })
     .catch((err) => {
-      console.log(err);
-      if (err.statusCode === errorCodes.NOT_FOUND) {
-        res.status(errorCodes.NOT_FOUND).send({ message: err.message });
-      } else if (err.name === "CastError") {
+      if (err.statuscode === errorCodes.FORBIDDEN) {
+        res.status(errorCodes.FORBIDDEN).send({ message: err.message });
+      } else if (err.statusCode === errorCodes.NOT_FOUND) {
+        res.status(errorCodes.NOT_FOUND).send({ message: "Карточка с заданным id отсутствует в базе" });
+      } else if (err.statusCode === errorCodes.BAD_REQUEST) {
         res.status(errorCodes.BAD_REQUEST).send({ message: "Ошибка в формате id карточки" });
       } else {
         res.status(errorCodes.DEFAULT).send({ message: "Произошла ошибка, сервер не может обработать запрос" });
@@ -49,6 +61,7 @@ const deleteCard = (req, res) => {
     });
 };
 
+// Поставить лайк карточке
 const addCardLike = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
@@ -62,7 +75,6 @@ const addCardLike = (req, res) => {
     })
     .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
-      console.log(err);
       if (err.statusCode === errorCodes.NOT_FOUND) {
         res.status(errorCodes.NOT_FOUND).send({ message: err.message });
       } else if (err.name === "CastError") {
@@ -73,6 +85,7 @@ const addCardLike = (req, res) => {
     });
 };
 
+// Убрать лайк у карточки
 const deleteCardLike = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,

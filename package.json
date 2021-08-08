@@ -4,9 +4,12 @@
   "description": "`/routes` — папка с файлами роутера  \r `/controllers` — папка с файлами контроллеров пользователя и карточки   \r `/models` — папка с файлами описания схем пользователя и карточки",
   "main": "index.js",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "express": "^4.17.1",
     "helmet": "^4.6.0",
-    "mongoose": "^5.13.3"
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.13.3",
+    "validator": "^13.6.0"
   },
   "devDependencies": {
     "eslint": "^7.31.0",
