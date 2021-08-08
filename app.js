@@ -9,9 +9,13 @@ const helmet = require("helmet");
 
 app.use(helmet());
 
+// импорт celebrate для валидации полей запроса до попадания в контроллеры
 const { celebrate, Joi, errors } = require("celebrate");
+
+// импорт роутов для юзеров и карточек
 const userRoute = require("./routes/users");
 const cardRoute = require("./routes/cards");
+
 const login = require("./controllers/login");
 const { createUser } = require("./controllers/users");
 const authCheck = require("./middlewares/auth");
@@ -47,6 +51,7 @@ app.post("/signup", celebrate({
   }),
 }), createUser);
 
+// мидлвэр для авторизации
 app.use(authCheck);
 
 app.use("/", userRoute);
@@ -57,8 +62,10 @@ app.use("*", (req, res) => {
   res.status(404).send({ message: "Ошибка 404, такой страницы не существует" });
 });
 
+// мидлвэр для ошибок celebrate
 app.use(errors());
 
+// мидлвэр для обработчика ошибок
 app.use(errorHandler);
 
 app.listen(PORT, () => {
