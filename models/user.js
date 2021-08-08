@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false,
     default: "https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png",
+    // eslint-disable-next-line
     match: /https?:\/\/(www.)?[a-z0-9\-\._~:\/?#\[\]@!$&'\(\)*\+,;=]+.[a-z0-9\/]/i,
   },
   email: {
