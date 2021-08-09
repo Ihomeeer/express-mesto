@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/user");
-const UnauthorizedError = require("../errors/Unauthorized");
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/user');
+const UnauthorizedError = require('../errors/Unauthorized');
 
 const errorCodes = {
   UNAUTHORIZED: 401,
@@ -9,21 +9,21 @@ const errorCodes = {
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  User.findOne({ email }).select("+password")
+  User.findOne({ email }).select('+password')
     .orFail(() => {
-      throw new UnauthorizedError("Неправильные почта или пароль");
+      throw new UnauthorizedError('Неправильные почта или пароль');
     })
     .then((user) => {
       bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
             // хеши не совпали — выбрасываем ошибку и НЕ говорим, что конкретно неправильно
-            throw new UnauthorizedError("Неправильные почта или пароль");
+            throw new UnauthorizedError('Неправильные почта или пароль');
           }
           // аутентификация успешна
           const token = jwt.sign({ _id: user._id },
-            "some-secret-key",
-            { expiresIn: "7d" });
+            'some-secret-key',
+            { expiresIn: '7d' });
           res.send({ token });
         })
         .catch((err) => {
