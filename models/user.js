@@ -40,4 +40,11 @@ const userSchema = new mongoose.Schema({
 },
 { versionKey: false });
 
+// Функция убирает пароль из возвращаемого объекта при регистрации нового пользователя
+userSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  return obj;
+};
+
 module.exports = mongoose.model('user', userSchema);
