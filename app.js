@@ -22,7 +22,8 @@ const authCheck = require('./middlewares/auth');
 const errorHandler = require('./middlewares/errorHandler');
 const NotFoundError = require('./errors/NotFound');
 
-const { PORT = 3000 } = process.env;
+// импорт логгера
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 // подключение БД
 mongoose.connect('mongodb://localhost:27017/mestodb', {
@@ -34,6 +35,9 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 
 // подключение парсера
 app.use(express.json());
+
+// подключение логгера запросов
+app.use(requestLogger);
 
 // подключение роутов для юзеровв и карточек, а так же роута для страницы 404
 app.post('/signin', celebrate({
@@ -65,13 +69,11 @@ app.use('*', (req, res, next) => {
   next(new NotFoundError('Ошибка 404, такой страницы не существует'));
 });
 
+// подключение логгера ошибок
+app.use(errorLogger);
+
 // мидлвэр для ошибок celebrate
 app.use(errors());
 
 // мидлвэр для обработчика ошибок
 app.use(errorHandler);
-
-app.listen(PORT, () => {
-  // eslint-disable-next-line
-  console.log(`App listening on port ${PORT}`);
-});
