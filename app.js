@@ -12,6 +12,8 @@ app.use(helmet());
 // импорт celebrate для валидации полей запроса до попадания в контроллеры
 const { celebrate, Joi, errors } = require('celebrate');
 
+const { PORT = 3000 } = process.env;
+
 // импорт роутов для юзеров и карточек
 const userRoute = require('./routes/users');
 const cardRoute = require('./routes/cards');
@@ -77,3 +79,8 @@ app.use(errors());
 
 // мидлвэр для обработчика ошибок
 app.use(errorHandler);
+
+app.listen(PORT, () => {
+  // eslint-disable-next-line
+  console.log(`App listening on port ${PORT}`);
+});
